@@ -17,4 +17,11 @@ pip install -r requirements.txt
 streamlit run main.py
 ```
 
+If you encounter an error such as `ModuleNotFoundError: No module named 'streamlit.cli'`,
+make sure Streamlit is installed and up to date:
+
+```bash
+pip install --upgrade streamlit
+```
+
 This will open a web interface where you can chat with the AI. The sidebar shows a sample player's stats and inventory. Replace the `DummyClient` with an actual OpenAI client and API key for real interactions.
