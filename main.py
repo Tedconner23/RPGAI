@@ -13,6 +13,7 @@ if get_script_run_ctx() is None:
 from rpg_ai.chat import ChatManager
 from rpg_ai.game import GameState
 from rpg_ai.models import Item, Player
+from rpg_ai.utils import load_source_files, upload_source_files
 
 
 def load_openai_client() -> openai.OpenAI:
@@ -43,14 +44,21 @@ def init_game() -> GameState:
             image_url="https://via.placeholder.com/150",
         )
     )
-    return GameState(player)
+
+    source_dir = Path(__file__).parent / "source"
+    source_text = load_source_files(source_dir)
+
+    return GameState(player, source_text=source_text)
 
 
 if "game" not in st.session_state:
     st.session_state.game = init_game()
 
 if "chat" not in st.session_state:
-    st.session_state.chat = ChatManager(load_openai_client(), st.session_state.game)
+    client = load_openai_client()
+    source_dir = Path(__file__).parent / "source"
+    file_ids = upload_source_files(client, source_dir)
+    st.session_state.chat = ChatManager(client, st.session_state.game, file_ids=file_ids)
 
 
 left_col, right_col = st.columns([3, 1])
