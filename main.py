@@ -69,7 +69,10 @@ with left_col:
     user_input = st.text_input("Your message")
     if st.button("Send") and user_input:
         st.session_state.chat.send_message(user_input)
-        st.experimental_rerun()
+        # In Streamlit 1.25 and later, ``st.rerun`` replaces the experimental
+        # ``st.experimental_rerun``. Using the newer API avoids an
+        # ``AttributeError`` on newer versions of Streamlit.
+        st.rerun()
 
 with right_col:
     st.header("Player Info")
