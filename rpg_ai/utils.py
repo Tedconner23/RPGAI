@@ -14,15 +14,19 @@ def load_source_files(directory: Path) -> str:
 
     texts: List[str] = []
     for path in directory.iterdir():
+        content = ""
         if path.suffix.lower() == ".txt":
-            texts.append(path.read_text())
+            content = path.read_text()
         elif path.suffix.lower() == ".pdf":
             with path.open("rb") as f:
                 reader = PyPDF2.PdfReader(f)
                 for page in reader.pages:
                     text = page.extract_text() or ""
-                    texts.append(text)
-    return "\n".join(texts)
+                    content += text
+        if content:
+            # Include the file name so the assistant can reference it directly.
+            texts.append(f"### File: {path.name}\n{content}")
+    return "\n\n".join(texts)
 
 
 def upload_source_files(client: OpenAI, directory: Path) -> list[str]:

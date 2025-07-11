@@ -5,10 +5,13 @@ from streamlit.runtime.scriptrunner import get_script_run_ctx
 import sys
 from pathlib import Path
 import openai
+import logging
 
 # Ensure the script is executed within Streamlit.
 if get_script_run_ctx() is None:
     sys.exit("Error: This script must be run using 'streamlit run main.py'.")
+
+logging.basicConfig(level=logging.INFO)
 
 from rpg_ai.chat import ChatManager
 from rpg_ai.game import GameState
