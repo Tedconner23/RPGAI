@@ -1,6 +1,8 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import List, Iterable
+from typing import List, Iterable, Tuple
+
+import json
 
 from openai import OpenAI
 
@@ -44,3 +46,25 @@ def upload_source_files(client: OpenAI, directory: Path) -> list[str]:
             uploaded = client.files.create(file=f, purpose="assistants")
             file_ids.append(uploaded.id)
     return file_ids
+
+
+def load_system_config(directory: Path) -> Tuple[str, str]:
+    """Return custom instructions and a rating string from ``system.json``.
+
+    The file should contain JSON with ``instructions`` and ``rating`` fields.
+    Missing fields result in empty strings. If the file does not exist, both
+    values are empty.
+    """
+
+    config_path = directory / "system.json"
+    if not config_path.exists():
+        return "", ""
+
+    try:
+        data = json.loads(config_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return "", ""
+
+    instructions = data.get("instructions", "") or ""
+    rating = data.get("rating", "") or ""
+    return instructions, rating

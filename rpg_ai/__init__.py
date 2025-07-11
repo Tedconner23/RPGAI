@@ -3,7 +3,7 @@
 from .chat import ChatManager
 from .game import GameState
 from .models import Item, Player
-from .utils import load_source_files, upload_source_files
+from .utils import load_source_files, upload_source_files, load_system_config
 
 __all__ = [
     "ChatManager",
@@ -12,4 +12,5 @@ __all__ = [
     "Item",
     "load_source_files",
     "upload_source_files",
+    "load_system_config",
 ]

@@ -10,6 +10,8 @@ class GameState:
 
     player: Player
     source_text: str = ""
+    instructions: str = ""
+    rating: str = ""
 
     def add_item_to_player(self, item: Item) -> None:
         self.player.add_item(item)
@@ -30,12 +32,15 @@ class GameState:
 
     def describe_world(self) -> str:
         """Return a brief description of the game world with extra context."""
-        parts = [
-            (
-                "You find yourself in a sprawling realm full of adventure and danger. "
-                "Chat with the AI to explore and interact with this world."
-            )
-        ]
+        parts = []
+        if self.instructions:
+            parts.append(self.instructions)
+        parts.append(
+            "You find yourself in a sprawling realm full of adventure and danger. "
+            "Chat with the AI to explore and interact with this world."
+        )
+        if self.rating:
+            parts.append(f"Content rating: {self.rating}")
         if self.source_text:
             parts.append(self.source_text)
         parts.append(self.player_description())
