@@ -1,9 +1,13 @@
 """Chat manager for communicating with the OpenAI API and tracking history."""
 
+import logging
 import time
 from openai import OpenAI
 
 from .game import GameState
+
+
+logger = logging.getLogger(__name__)
 
 
 class ChatManager:
@@ -58,9 +62,11 @@ class ChatManager:
                     instructions=self.game_state.describe_world(),
                 )
         self.thread = self.client.beta.threads.create()
+        logger.info("ChatManager initialized (files: %s)", file_ids)
 
     def send_message(self, message: str) -> str:
         """Send a message to the assistant and return the response text."""
+        logger.info("User: %s", message)
         self.client.beta.threads.messages.create(
             thread_id=self.thread.id,
             role="user",
@@ -76,6 +82,7 @@ class ChatManager:
             run = self.client.beta.threads.runs.retrieve(
                 thread_id=self.thread.id, run_id=run.id
             )
+            logger.debug("Run status: %s", run.status)
 
         if run.status != "completed":
             raise RuntimeError(f"Run failed: {run.status}")
@@ -89,4 +96,5 @@ class ChatManager:
 
         self.history.append({"role": "user", "content": message})
         self.history.append({"role": "assistant", "content": answer})
+        logger.info("Assistant: %s", answer)
         return answer
