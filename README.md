@@ -17,6 +17,12 @@ pip install -r requirements.txt
 streamlit run main.py
 ```
 
+If your shell cannot find the `streamlit` command, invoke it via Python instead:
+
+```bash
+python -m streamlit run main.py
+```
+
 If you encounter an error such as `ModuleNotFoundError: No module named 'streamlit.cli'`,
 make sure Streamlit is installed and up to date:
 
