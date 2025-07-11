@@ -16,7 +16,9 @@ def load_source_files(directory: Path) -> str:
     for path in directory.iterdir():
         content = ""
         if path.suffix.lower() == ".txt":
-            content = path.read_text()
+            # Explicitly decode as UTF-8 and ignore any invalid bytes so
+            # unexpected encodings do not crash the application.
+            content = path.read_text(encoding="utf-8", errors="ignore")
         elif path.suffix.lower() == ".pdf":
             with path.open("rb") as f:
                 reader = PyPDF2.PdfReader(f)
