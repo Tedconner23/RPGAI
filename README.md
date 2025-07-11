@@ -35,3 +35,7 @@ OpenAI API key in a file with the `.key` extension inside a folder named
 `key` (for example `key/openai.key`). The application reads this key and uses
 the `gpt-4o` model for responses. The sidebar shows a sample player's stats and
 inventory.
+
+Any text or PDF files placed in a folder named `source` are automatically read
+and uploaded to the OpenAI Assistants API at startup. The assistant can then
+search these files for relevant information while responding to you.
