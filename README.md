@@ -44,3 +44,22 @@ The code attempts to support both old and new versions of the OpenAI client.
 If you use a newer release that relies on vector stores for retrieval, the
 application will create a temporary vector store and attach your uploaded files
 to it automatically.
+
+## Custom System Instructions
+
+Place a file named `system.json` inside a folder called `config` to control the
+assistant's behavior. The file should contain JSON with two optional fields:
+
+- `instructions` – text prepended to the game description so you can guide how
+  the AI responds.
+- `rating` – a freeform string describing the desired content rating or
+  explicitness level.
+
+Example `config/system.json`:
+
+```json
+{
+  "instructions": "You are a friendly dungeon master. Stay in character.",
+  "rating": "PG-13"
+}
+```

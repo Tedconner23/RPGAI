@@ -16,7 +16,11 @@ logging.basicConfig(level=logging.INFO)
 from rpg_ai.chat import ChatManager
 from rpg_ai.game import GameState
 from rpg_ai.models import Item, Player
-from rpg_ai.utils import load_source_files, upload_source_files
+from rpg_ai.utils import (
+    load_source_files,
+    upload_source_files,
+    load_system_config,
+)
 
 
 def load_openai_client() -> openai.OpenAI:
@@ -51,7 +55,15 @@ def init_game() -> GameState:
     source_dir = Path(__file__).parent / "source"
     source_text = load_source_files(source_dir)
 
-    return GameState(player, source_text=source_text)
+    config_dir = Path(__file__).parent / "config"
+    instructions, rating = load_system_config(config_dir)
+
+    return GameState(
+        player,
+        source_text=source_text,
+        instructions=instructions,
+        rating=rating,
+    )
 
 
 if "game" not in st.session_state:
