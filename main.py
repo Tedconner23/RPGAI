@@ -3,6 +3,8 @@
 import streamlit as st
 from streamlit.runtime.scriptrunner import get_script_run_ctx
 import sys
+from pathlib import Path
+import openai
 
 # Ensure the script is executed within Streamlit.
 if get_script_run_ctx() is None:
@@ -13,10 +15,14 @@ from rpg_ai.game import GameState
 from rpg_ai.models import Item, Player
 
 
-class DummyClient:
-    """Placeholder client to mimic the OpenAI API."""
-
-    pass
+def load_openai_client() -> openai.OpenAI:
+    """Load the OpenAI client using the API key from the ``key`` folder."""
+    key_dir = Path(__file__).parent / "key"
+    key_files = list(key_dir.glob("*.key"))
+    if not key_files:
+        raise FileNotFoundError("No .key file found in 'key' directory.")
+    api_key = key_files[0].read_text().strip()
+    return openai.OpenAI(api_key=api_key)
 
 
 def init_game() -> GameState:
@@ -44,7 +50,7 @@ if "game" not in st.session_state:
     st.session_state.game = init_game()
 
 if "chat" not in st.session_state:
-    st.session_state.chat = ChatManager(DummyClient(), st.session_state.game)
+    st.session_state.chat = ChatManager(load_openai_client(), st.session_state.game)
 
 
 left_col, right_col = st.columns([3, 1])
