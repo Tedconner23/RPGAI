@@ -30,4 +30,8 @@ make sure Streamlit is installed and up to date:
 pip install --upgrade streamlit
 ```
 
-This will open a web interface where you can chat with the AI. The sidebar shows a sample player's stats and inventory. Replace the `DummyClient` with an actual OpenAI client and API key for real interactions.
+This will open a web interface where you can chat with the AI. Place your
+OpenAI API key in a file with the `.key` extension inside a folder named
+`key` (for example `key/openai.key`). The application reads this key and uses
+the `gpt-4o` model for responses. The sidebar shows a sample player's stats and
+inventory.
