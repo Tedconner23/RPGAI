@@ -1,6 +1,12 @@
 """Streamlit interface for the RPG AI project."""
 
 import streamlit as st
+from streamlit.runtime.scriptrunner import get_script_run_ctx
+import sys
+
+# Ensure the script is executed within Streamlit.
+if get_script_run_ctx() is None:
+    sys.exit("Error: This script must be run using 'streamlit run main.py'.")
 
 from rpg_ai.chat import ChatManager
 from rpg_ai.game import GameState
