@@ -20,12 +20,43 @@ class ChatManager:
         self.history: list[dict[str, str]] = []
 
         tools = [{"type": "retrieval"}] if file_ids else []
-        self.assistant = self.client.beta.assistants.create(
-            model="gpt-4o",
-            instructions=self.game_state.describe_world(),
-            tools=tools,
-            file_ids=file_ids or [],
-        )
+
+        try:
+            # Older versions of the OpenAI client accept ``file_ids`` directly
+            # when creating the assistant.
+            self.assistant = self.client.beta.assistants.create(
+                model="gpt-4o",
+                instructions=self.game_state.describe_world(),
+                tools=tools,
+                file_ids=file_ids or [],
+            )
+        except TypeError:
+            # Newer versions require a vector store instead of ``file_ids``.
+            if file_ids and hasattr(self.client.beta, "vector_stores"):
+                vector_store = self.client.beta.vector_stores.create(
+                    name="rpg-ai-source"
+                )
+                self.client.beta.vector_stores.file_batches.upload_and_poll(
+                    vector_store_id=vector_store.id,
+                    files=file_ids,
+                )
+                tool_resources = {
+                    "file_search": {"vector_store_ids": [vector_store.id]}
+                }
+                self.assistant = self.client.beta.assistants.create(
+                    model="gpt-4o",
+                    instructions=self.game_state.describe_world(),
+                    tools=tools,
+                    tool_resources=tool_resources,
+                )
+            else:
+                # If files are provided but we cannot attach them, create the
+                # assistant without retrieval capabilities so at least the
+                # application continues to function.
+                self.assistant = self.client.beta.assistants.create(
+                    model="gpt-4o",
+                    instructions=self.game_state.describe_world(),
+                )
         self.thread = self.client.beta.threads.create()
 
     def send_message(self, message: str) -> str:

@@ -39,3 +39,8 @@ inventory.
 Any text or PDF files placed in a folder named `source` are automatically read
 and uploaded to the OpenAI Assistants API at startup. The assistant can then
 search these files for relevant information while responding to you.
+
+The code attempts to support both old and new versions of the OpenAI client.
+If you use a newer release that relies on vector stores for retrieval, the
+application will create a temporary vector store and attach your uploaded files
+to it automatically.
