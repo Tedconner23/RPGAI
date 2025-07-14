@@ -76,28 +76,47 @@ if "chat" not in st.session_state:
     st.session_state.chat = ChatManager(client, st.session_state.game, file_ids=file_ids)
 
 
-left_col, right_col = st.columns([3, 1])
+st.title("RPG AI Chat")
 
-with left_col:
-    st.title("RPG AI Chat")
+top_cols = st.columns([2, 1, 1, 1])
+if top_cols[0].button("New chat"):
+    st.session_state.chat.clear()
+    st.rerun()
+regen_disabled = len(st.session_state.chat.history) < 2 or \
+    st.session_state.chat.history[-1]["role"] != "assistant"
+if top_cols[1].button("Regenerate", disabled=regen_disabled):
+    st.session_state.chat.regenerate_last()
+    st.rerun()
+if top_cols[2].button("Clear chat"):
+    st.session_state.chat.clear()
+    st.rerun()
+if top_cols[3].download_button(
+    "Save chat", st.session_state.chat.export_history(), file_name="chat.txt"
+):
+    st.toast("Chat saved")
 
-    for entry in st.session_state.chat.history:
-        role = entry["role"]
-        content = entry["content"]
-        if role == "user":
-            st.markdown(f"**You:** {content}")
-        else:
-            st.markdown(f"**AI:** {content}")
+for i, entry in enumerate(st.session_state.chat.history):
+    with st.chat_message(entry["role"]):
+        st.code(entry["content"], language="", use_container_width=True)
+        cols = st.columns([8, 1])
+        cols[0].caption(entry["role"].capitalize())
+        if cols[1].button("\u274C", key=f"rm_{i}", help="Remove from context"):
+            st.session_state.chat.remove_message(i)
+            st.rerun()
 
-    user_input = st.text_input("Your message")
-    if st.button("Send") and user_input:
-        st.session_state.chat.send_message(user_input)
-        # In Streamlit 1.25 and later, ``st.rerun`` replaces the experimental
-        # ``st.experimental_rerun``. Using the newer API avoids an
-        # ``AttributeError`` on newer versions of Streamlit.
+if st.session_state.chat.history and st.session_state.chat.history[-1]["role"] == "assistant":
+    if st.button("Regenerate response", key="regen_bottom"):
+        st.session_state.chat.regenerate_last()
         st.rerun()
 
-with right_col:
+user_text = st.session_state.get("user_text", "")
+user_text = st.text_area("Your message", value=user_text, key="user_text", height=100)
+if st.button("Send") and user_text.strip():
+    st.session_state.chat.send_message(user_text.strip())
+    st.session_state.user_text = ""
+    st.rerun()
+
+with st.sidebar:
     st.header("Player Info")
     player = st.session_state.game.player
     st.markdown(f"**Name:** {player.name}")
