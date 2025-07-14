@@ -133,6 +133,22 @@ class ChatManager:
         logger.info("Assistant (regenerated): %s", answer)
         return answer
 
+    def edit_and_resend(self, index: int, new_message: str) -> str:
+        """Edit a prior user message and resend it for a new response."""
+        if not 0 <= index < len(self.history):
+            return ""
+        if self.history[index]["role"] != "user":
+            return ""
+
+        self.history[index]["content"] = new_message
+        del self.history[index + 1 :]
+        self._rebuild_thread()
+
+        answer = self._run_assistant()
+        self.history.append({"role": "assistant", "content": answer})
+        logger.info("Assistant (edited): %s", answer)
+        return answer
+
     def clear(self) -> None:
         """Clear all messages and start a fresh thread."""
         self.history.clear()

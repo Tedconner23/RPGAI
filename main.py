@@ -80,6 +80,8 @@ if "chat" not in st.session_state:
 
 if "user_text" not in st.session_state:
     st.session_state.user_text = ""
+if "edit_index" not in st.session_state:
+    st.session_state.edit_index = None
 
 
 st.title("RPG AI Chat")
@@ -103,15 +105,22 @@ if top_cols[3].download_button(
 
 for i, entry in enumerate(st.session_state.chat.history):
     with st.chat_message(entry["role"]):
-        if USE_CONTAINER_WIDTH:
-            st.code(entry["content"], language="", use_container_width=True)
+        st.markdown(entry["content"])
+        if entry["role"] == "user":
+            cols = st.columns([7, 1, 1])
+            cols[0].caption(entry["role"].capitalize())
+            if cols[1].button("\u270F\ufe0f", key=f"edit_{i}", help="Edit and resend"):
+                st.session_state.user_text = entry["content"]
+                st.session_state.edit_index = i
+            if cols[2].button("\u274C", key=f"rm_{i}", help="Remove from context"):
+                st.session_state.chat.remove_message(i)
+                st.rerun()
         else:
-            st.code(entry["content"], language="")
-        cols = st.columns([8, 1])
-        cols[0].caption(entry["role"].capitalize())
-        if cols[1].button("\u274C", key=f"rm_{i}", help="Remove from context"):
-            st.session_state.chat.remove_message(i)
-            st.rerun()
+            cols = st.columns([8, 1])
+            cols[0].caption(entry["role"].capitalize())
+            if cols[1].button("\u274C", key=f"rm_{i}", help="Remove from context"):
+                st.session_state.chat.remove_message(i)
+                st.rerun()
 
 if st.session_state.chat.history and st.session_state.chat.history[-1]["role"] == "assistant":
     if st.button("Regenerate response", key="regen_bottom"):
@@ -121,11 +130,23 @@ if st.session_state.chat.history and st.session_state.chat.history[-1]["role"] =
 def send_message() -> None:
     text = st.session_state.user_text.strip()
     if text:
-        st.session_state.chat.send_message(text)
+        edit_idx = st.session_state.edit_index
+        if edit_idx is not None:
+            st.session_state.chat.edit_and_resend(edit_idx, text)
+            st.session_state.edit_index = None
+        else:
+            st.session_state.chat.send_message(text)
         st.session_state.user_text = ""
 
 st.text_area("Your message", key="user_text", height=100)
-st.button("Send", on_click=send_message)
+send_label = "Update" if st.session_state.edit_index is not None else "Send"
+st.button(send_label, on_click=send_message)
+def cancel_edit() -> None:
+    st.session_state.edit_index = None
+    st.session_state.user_text = ""
+
+if st.session_state.edit_index is not None:
+    st.button("Cancel", on_click=cancel_edit)
 
 with st.sidebar:
     st.header("Player Info")
