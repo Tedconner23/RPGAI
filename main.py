@@ -75,6 +75,9 @@ if "chat" not in st.session_state:
     file_ids = upload_source_files(client, source_dir)
     st.session_state.chat = ChatManager(client, st.session_state.game, file_ids=file_ids)
 
+if "user_text" not in st.session_state:
+    st.session_state.user_text = ""
+
 
 st.title("RPG AI Chat")
 
@@ -109,12 +112,14 @@ if st.session_state.chat.history and st.session_state.chat.history[-1]["role"] =
         st.session_state.chat.regenerate_last()
         st.rerun()
 
-user_text = st.session_state.get("user_text", "")
-user_text = st.text_area("Your message", value=user_text, key="user_text", height=100)
-if st.button("Send") and user_text.strip():
-    st.session_state.chat.send_message(user_text.strip())
-    st.session_state.user_text = ""
-    st.rerun()
+def send_message() -> None:
+    text = st.session_state.user_text.strip()
+    if text:
+        st.session_state.chat.send_message(text)
+        st.session_state.user_text = ""
+
+st.text_area("Your message", key="user_text", height=100)
+st.button("Send", on_click=send_message)
 
 with st.sidebar:
     st.header("Player Info")
