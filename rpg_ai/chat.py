@@ -72,7 +72,15 @@ class ChatManager:
             role="user",
             content=message,
         )
+        answer = self._run_assistant()
 
+        self.history.append({"role": "user", "content": message})
+        self.history.append({"role": "assistant", "content": answer})
+        logger.info("Assistant: %s", answer)
+        return answer
+
+    def _run_assistant(self) -> str:
+        """Execute the assistant run and return the latest assistant reply."""
         run = self.client.beta.threads.runs.create(
             thread_id=self.thread.id,
             assistant_id=self.assistant.id,
@@ -93,8 +101,47 @@ class ChatManager:
             if msg.role == "assistant":
                 answer = msg.content[0].text.value.strip()
                 break
-
-        self.history.append({"role": "user", "content": message})
-        self.history.append({"role": "assistant", "content": answer})
-        logger.info("Assistant: %s", answer)
         return answer
+
+    def _rebuild_thread(self) -> None:
+        """Create a new thread and replay ``history`` messages into it."""
+        self.thread = self.client.beta.threads.create()
+        for msg in self.history:
+            self.client.beta.threads.messages.create(
+                thread_id=self.thread.id,
+                role=msg["role"],
+                content=msg["content"],
+            )
+
+    def remove_message(self, index: int) -> None:
+        """Remove a message from history and rebuild the thread."""
+        if 0 <= index < len(self.history):
+            del self.history[index]
+            self._rebuild_thread()
+
+    def regenerate_last(self) -> str:
+        """Regenerate the assistant's most recent response."""
+        if len(self.history) < 2 or self.history[-1]["role"] != "assistant":
+            return ""
+
+        # Remove the previous assistant reply and rebuild the thread
+        self.history.pop()
+        self._rebuild_thread()
+
+        answer = self._run_assistant()
+        self.history.append({"role": "assistant", "content": answer})
+        logger.info("Assistant (regenerated): %s", answer)
+        return answer
+
+    def clear(self) -> None:
+        """Clear all messages and start a fresh thread."""
+        self.history.clear()
+        self.thread = self.client.beta.threads.create()
+
+    def export_history(self) -> str:
+        """Return the conversation history as plain text."""
+        parts = []
+        for msg in self.history:
+            role = "You" if msg["role"] == "user" else "AI"
+            parts.append(f"{role}: {msg['content']}")
+        return "\n\n".join(parts)
