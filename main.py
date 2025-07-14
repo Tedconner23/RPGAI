@@ -6,12 +6,15 @@ import sys
 from pathlib import Path
 import openai
 import logging
+import inspect
 
 # Ensure the script is executed within Streamlit.
 if get_script_run_ctx() is None:
     sys.exit("Error: This script must be run using 'streamlit run main.py'.")
 
 logging.basicConfig(level=logging.INFO)
+
+USE_CONTAINER_WIDTH = "use_container_width" in inspect.signature(st.code).parameters
 
 from rpg_ai.chat import ChatManager
 from rpg_ai.game import GameState
@@ -100,7 +103,10 @@ if top_cols[3].download_button(
 
 for i, entry in enumerate(st.session_state.chat.history):
     with st.chat_message(entry["role"]):
-        st.code(entry["content"], language="", use_container_width=True)
+        if USE_CONTAINER_WIDTH:
+            st.code(entry["content"], language="", use_container_width=True)
+        else:
+            st.code(entry["content"], language="")
         cols = st.columns([8, 1])
         cols[0].caption(entry["role"].capitalize())
         if cols[1].button("\u274C", key=f"rm_{i}", help="Remove from context"):
