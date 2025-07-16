@@ -2,6 +2,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
+MAX_ASSISTANT_INSTRUCTIONS_LEN = 256_000
+
 from .models import Player, Item
 
 @dataclass
@@ -44,4 +46,8 @@ class GameState:
         if self.source_text:
             parts.append(self.source_text)
         parts.append(self.player_description())
-        return "\n\n".join(parts)
+
+        text = "\n\n".join(parts)
+        if len(text) > MAX_ASSISTANT_INSTRUCTIONS_LEN:
+            text = text[:MAX_ASSISTANT_INSTRUCTIONS_LEN]
+        return text
