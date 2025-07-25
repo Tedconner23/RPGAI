@@ -2,6 +2,7 @@
 
 import logging
 import time
+from pathlib import Path
 from openai import OpenAI
 
 from .game import GameState
@@ -63,6 +64,20 @@ class ChatManager:
                 )
         self.thread = self.client.beta.threads.create()
         logger.info("ChatManager initialized (files: %s)", file_ids)
+        self._new_log_file()
+
+    def _new_log_file(self) -> None:
+        """Create a new text file for logging conversation history."""
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        root_dir = Path(__file__).resolve().parent.parent
+        self.log_path = root_dir / f"chat_{timestamp}.txt"
+        with self.log_path.open("w", encoding="utf-8") as f:
+            f.write(f"Chat started {timestamp}\n\n")
+
+    def _append_line(self, role: str, content: str) -> None:
+        """Append a formatted line to the current chat log file."""
+        with self.log_path.open("a", encoding="utf-8") as f:
+            f.write(f"{role}: {content}\n")
 
     def send_message(self, message: str) -> str:
         """Send a message to the assistant and return the response text."""
@@ -76,6 +91,8 @@ class ChatManager:
 
         self.history.append({"role": "user", "content": message})
         self.history.append({"role": "assistant", "content": answer})
+        self._append_line("You", message)
+        self._append_line("AI", answer)
         logger.info("Assistant: %s", answer)
         return answer
 
@@ -130,6 +147,7 @@ class ChatManager:
 
         answer = self._run_assistant()
         self.history.append({"role": "assistant", "content": answer})
+        self._append_line("AI (regenerated)", answer)
         logger.info("Assistant (regenerated): %s", answer)
         return answer
 
@@ -146,6 +164,8 @@ class ChatManager:
 
         answer = self._run_assistant()
         self.history.append({"role": "assistant", "content": answer})
+        self._append_line("You (edited)", new_message)
+        self._append_line("AI", answer)
         logger.info("Assistant (edited): %s", answer)
         return answer
 
@@ -153,6 +173,7 @@ class ChatManager:
         """Clear all messages and start a fresh thread."""
         self.history.clear()
         self.thread = self.client.beta.threads.create()
+        self._new_log_file()
 
     def export_history(self) -> str:
         """Return the conversation history as plain text."""
