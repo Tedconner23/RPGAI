@@ -36,9 +36,10 @@ OpenAI API key in a file with the `.key` extension inside a folder named
 the `gpt-4o` model for responses. The sidebar shows a sample player's stats and
 inventory.
 
-Any text or PDF files placed in a folder named `source` are automatically read
-and uploaded to the OpenAI Assistants API at startup. The assistant can then
-search these files for relevant information while responding to you.
+Any text, C# (`.cs`) or PDF files placed anywhere under a folder named
+`source` (including subfolders) are automatically read and uploaded to the
+OpenAI Assistants API at startup. The assistant can then search these files
+for relevant information while responding to you.
 
 The code attempts to support both old and new versions of the OpenAI client.
 If you use a newer release that relies on vector stores for retrieval, the

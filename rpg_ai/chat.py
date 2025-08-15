@@ -6,6 +6,10 @@ from pathlib import Path
 from openai import OpenAI
 
 from .game import GameState
+from .memory import (
+    update_conversation_summary,
+    update_user_preferences,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -24,6 +28,23 @@ class ChatManager:
         self.game_state = game_state
         self.history: list[dict[str, str]] = []
 
+        root_dir = Path(__file__).resolve().parent.parent
+        self.memory_path = root_dir / "source" / "memory_summary.txt"
+        self.prefs_path = root_dir / "source" / "user_prefs.txt"
+        self.interaction_count = 0
+
+        instructions = self.game_state.describe_world()
+        if self.memory_path.exists():
+            instructions += (
+                "\n\nConversation summary:\n" +
+                self.memory_path.read_text(encoding="utf-8")
+            )
+        if self.prefs_path.exists():
+            instructions += (
+                "\n\nUser preferences:\n" +
+                self.prefs_path.read_text(encoding="utf-8")
+            )
+
         tools = [{"type": "retrieval"}] if file_ids else []
 
         try:
@@ -31,7 +52,7 @@ class ChatManager:
             # when creating the assistant.
             self.assistant = self.client.beta.assistants.create(
                 model="gpt-4o",
-                instructions=self.game_state.describe_world(),
+                instructions=instructions,
                 tools=tools,
                 file_ids=file_ids or [],
             )
@@ -50,7 +71,7 @@ class ChatManager:
                 }
                 self.assistant = self.client.beta.assistants.create(
                     model="gpt-4o",
-                    instructions=self.game_state.describe_world(),
+                    instructions=instructions,
                     tools=tools,
                     tool_resources=tool_resources,
                 )
@@ -60,7 +81,7 @@ class ChatManager:
                 # application continues to function.
                 self.assistant = self.client.beta.assistants.create(
                     model="gpt-4o",
-                    instructions=self.game_state.describe_world(),
+                    instructions=instructions,
                 )
         self.thread = self.client.beta.threads.create()
         logger.info("ChatManager initialized (files: %s)", file_ids)
@@ -79,6 +100,12 @@ class ChatManager:
         with self.log_path.open("a", encoding="utf-8") as f:
             f.write(f"{role}: {content}\n")
 
+    def _update_memory(self) -> None:
+        """Update conversation summary and, periodically, preference memory."""
+        update_conversation_summary(self.client, self.history, self.memory_path)
+        if self.interaction_count % 10 == 0 and self.interaction_count > 0:
+            update_user_preferences(self.client, self.history, self.prefs_path)
+
     def send_message(self, message: str) -> str:
         """Send a message to the assistant and return the response text."""
         logger.info("User: %s", message)
@@ -93,6 +120,8 @@ class ChatManager:
         self.history.append({"role": "assistant", "content": answer})
         self._append_line("You", message)
         self._append_line("AI", answer)
+        self.interaction_count += 1
+        self._update_memory()
         logger.info("Assistant: %s", answer)
         return answer
 
@@ -148,6 +177,7 @@ class ChatManager:
         answer = self._run_assistant()
         self.history.append({"role": "assistant", "content": answer})
         self._append_line("AI (regenerated)", answer)
+        update_conversation_summary(self.client, self.history, self.memory_path)
         logger.info("Assistant (regenerated): %s", answer)
         return answer
 
@@ -166,6 +196,8 @@ class ChatManager:
         self.history.append({"role": "assistant", "content": answer})
         self._append_line("You (edited)", new_message)
         self._append_line("AI", answer)
+        self.interaction_count += 1
+        self._update_memory()
         logger.info("Assistant (edited): %s", answer)
         return answer
 
